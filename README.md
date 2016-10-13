@@ -1,24 +1,30 @@
-# TaskStuff
+# Tasker
 
-**TODO: Add description**
+**Slack bot to manage tasks**
 
-## Installation
+This Slack bot manages tasks and users/groups to do a desired task. When a user marks a task as done, he/she will be removed from the remaining users list.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+Once a task has no remaining users, it will be deleted.
 
-  1. Add `task_stuff` to your list of dependencies in `mix.exs`:
+This bot uses the library [Elixir-Slack](https://github.com/BlakeWilliams/Elixir-Slack).
 
-    ```elixir
-    def deps do
-      [{:task_stuff, "~> 0.1.0"}]
-    end
-    ```
+The bot following will work with the following commands:
 
-  2. Ensure `task_stuff` is started before your application:
+  * Create a new task
+  ``` @taskerBot Task new MY_TASK_NAME @user1 @user2 ```
+  
+  * Mark a task as done
+  ``` @taskerBot Task MY_TASK_NAME done ```
+  
+  * List current taks and the remaining users
+  ``` @taskerBot Tasks ```
 
-    ```elixir
-    def application do
-      [applications: [:task_stuff]]
-    end
-    ```
+## Running
 
+Just set your slack bot token in the system env:
+
+  ``` export SLACK_TOKEN=my_token ```
+  
+And run the bot using
+
+``` mix run --no-halt ```
