@@ -11,6 +11,8 @@ defmodule Tasker.SlackBot do
    @action_create_task "new"
    @action_task_done "done"
 
+   @slack_bot_id "USLACKBOT"
+
   def handle_connect(slack) do
     IO.puts "Connected as #{slack.me.name}"
   end
@@ -34,9 +36,23 @@ defmodule Tasker.SlackBot do
         case matches do
           [task_name] ->
             send_message("<@#{message.user}> you must tell me which group or users will have to do the task", message.channel, slack)
+          [task_name, "all"] ->
+            task =
+              slack.users
+              |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
+              |> Enum.map(fn({user_name,_}) -> "<@#{user_name}>" end)
+              |> add_task_to_cache(task_name)
+              |> send_task_creation_success_message(message, slack)
+              |> send_task_request_user_mentions(message, slack)
+
           [task_name, task_users] ->
-            add_task_to_cache(task_name, String.split(task_users, " "))
-            send_message("<@#{message.user}> created a new task named #{task_name}", message.channel, slack)
+            task =
+              task_users
+              |> String.split(" ")
+              |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
+              |> add_task_to_cache(task_name)
+              |> send_task_creation_success_message(message, slack)
+              |> send_task_request_user_mentions(message, slack)
         end
 
       Regex.match?(~r/#{@command_list_tasks}/, command) ->
@@ -55,6 +71,22 @@ defmodule Tasker.SlackBot do
         Logger.debug "No matching"
     end
     {:ok}
+  end
+
+  defp send_task_creation_success_message(task, message, slack) do
+     send_message("<@#{message.user}> created a new task named #{task.name}", message.channel, slack)
+
+     task
+  end
+
+  defp send_task_request_user_mentions(task, message, slack) do
+    user_mention_list =
+      task.users
+      |> Enum.map(fn(user_name) -> "#{user_name}" end)
+      |> Enum.join(" ")
+    send_message("#{task.name} should be done by: #{user_mention_list}", message.channel, slack)
+
+    task
   end
 
   defp update_cached_tasks(task_name, task_user) do
@@ -106,7 +138,7 @@ defmodule Tasker.SlackBot do
     end
   end
 
-  defp add_task_to_cache(task_name, task_users) do
+  defp add_task_to_cache(task_users, task_name) do
     task = %Task{name: task_name, users: task_users}
 
     case get_cached_tasks() do
@@ -116,7 +148,7 @@ defmodule Tasker.SlackBot do
        ConCache.put(:task_stuff_cache, :tasks, cached_tasks ++ [task])
     end
 
-    task_name
+    task
   end
 
   defp get_first_regexp_match(regexp, text, options \\ :all_but_first) do
