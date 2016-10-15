@@ -28,7 +28,15 @@ The bot following will work with the following commands:
 
   ``` @taskerBot Group new MY_GROUP_NAME @user1 @user2 ```
 
-  * List user groups
+  * Add a users to a group
+
+  ``` @taskerBot Group MY_GROUP_NAME add @user3 @user4 ```
+
+  * Remove users from a group
+
+  ``` @taskerBot Group MY_GROUP_NAME remove @user1 @user2 ```
+
+  * List groups and members
 
   ``` @taskerBot Groups ```
 

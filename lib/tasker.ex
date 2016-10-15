@@ -10,8 +10,8 @@ defmodule Tasker do
 
     # Define workers and child supervisors to be supervised
     children = [
-      worker(Tasker.SlackBot, [slack_token], [name: SlackBot, restart: :transient]),
-      worker(ConCache, [[], [name: :task_stuff_cache]])
+      worker(Tasker.SlackBot, [slack_token], [name: :tasker_bot, restart: :transient]),
+      worker(ConCache, [[], [name: :tasker_cache]])
     ]
 
     opts = [strategy: :one_for_one, name: Tasker.Supervisor]

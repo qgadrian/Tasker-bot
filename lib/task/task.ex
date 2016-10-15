@@ -1,3 +1,3 @@
-defmodule Task do
-  defstruct name: "", users: [] 
+defmodule Tasker.Task do
+  defstruct name: "", users: []
 end

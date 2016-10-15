@@ -1,3 +1,3 @@
-defmodule Group do
+defmodule Tasker.Group do
   defstruct name: "", users: []
 end
