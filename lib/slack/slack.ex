@@ -15,23 +15,24 @@ defmodule Tasker.SlackBot do
    @command_group "Group"
    @command_list_groups "Groups"
    # actions
-   @action_create_task "new"
+   @action_create "new"
+   @action_remove "remove"
+   @action_delete "delete"
    @action_task_done "done"
-   @action_create_group "new"
    @action_group_add_users "add"
-   @action_group_remove_users "remove"
 
    # Slack bot id
    @slack_bot_id "USLACKBOT"
 
    # Regular expressions
-   @regexp_create_task ~r/#{@command_task} #{@action_create_task} (?<task_name>\w+) ?((?<task_users><@.+>)|(?<task_group>\w+))*/
+   @regexp_create_task ~r/#{@command_task} #{@action_create} (?<task_name>\w+) ?((?<task_users><@.+>)|(?<task_group>\w+))*/
+   @regexp_remove_task ~r/#{@command_task} (#{@action_remove}|#{@action_delete}) (?<task_name>\w+)*/
    @regexp_list_tasks ~r/#{@command_list_tasks}/
    @regexp_task_done ~r/#{@command_task} (\w+) #{@action_task_done}/
-   @regexp_create_group ~r/#{@command_group} #{@action_create_group} (?<group_name>\w+) ?(?<group_users>.+)*/
+   @regexp_create_group ~r/#{@command_group} #{@action_create} (?<group_name>\w+) ?(?<group_users>.+)*/
    @regexp_group_list ~r/#{@command_list_groups}/
    @regexp_group_add_users ~r/#{@command_group} (?<group_name>\w+) #{@action_group_add_users} ?(?<new_users><@.+>)*/
-   @regexp_group_remove_users ~r/#{@command_group} (?<group_name>\w+) #{@action_group_remove_users} ?(?<users_to_remove><@.+>)*/
+   @regexp_group_remove_users ~r/#{@command_group} (?<group_name>\w+) (#{@action_remove}|#{@action_delete}) ?(?<users_to_remove><@.+>)*/
 
   def handle_connect(slack) do
     IO.puts "Connected as #{slack.me.name}"
@@ -60,7 +61,6 @@ defmodule Tasker.SlackBot do
             |> Enum.map(fn({user_name,_}) -> "<@#{user_name}>" end)
             |> add_task_to_cache(task_name)
             |> send_task_creation_success_message(message, slack)
-            |> send_task_request_user_mentions(message, slack)
 
           [task_name, "", task_users] ->
             task_users
@@ -68,14 +68,25 @@ defmodule Tasker.SlackBot do
             |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
             |> add_task_to_cache(task_name)
             |> send_task_creation_success_message(message, slack)
-            |> send_task_request_user_mentions(message, slack)
 
           [task_name, task_group, ""] ->
             get_cached_group(task_group).users
             |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
             |> add_task_to_cache(task_name)
             |> send_task_creation_success_message(message, slack)
-            |> send_task_request_user_mentions(message, slack)
+        end
+
+      Regex.match?(@regexp_remove_task, command) ->
+        matches = Regex.run(@regexp_remove_task, command, capture: ["task_name"])
+        case matches do
+          [""] ->
+            send_message("<@#{message.user}> I don't know which task to delete!", message.channel, slack)
+          [task_name] ->
+            task_name
+            |> updated_tasks(:remove)
+            |> add_tasks_to_cache()
+
+            send_task_remove_success_message(task_name, message, slack)
         end
 
       Regex.match?(@regexp_list_tasks, command) ->
@@ -86,7 +97,7 @@ defmodule Tasker.SlackBot do
         task_name = get_first_regexp_match(@regexp_task_done, command)
 
         task_name
-        |> update_cached_tasks("<@#{message.user}>")
+        |> updated_task_user("<@#{message.user}>", :remove)
         |> add_groups_to_cache()
 
         send_message("<@#{message.user}> task #{task_name} done", message.channel, slack)
@@ -129,7 +140,7 @@ defmodule Tasker.SlackBot do
           end
 
         Regex.match?(@regexp_group_remove_users, command) ->
-          matches = Regex.run(@regexp_group_remove_users, command, capture: :all_but_first)
+          matches = Regex.run(@regexp_group_remove_users, command, capture: ["group_name", "users_to_remove"])
           case matches do
             [_, ""] ->
               send_message("<@#{message.user}> you forgot tell me the members the will removed from the group", message.channel, slack)
@@ -166,7 +177,13 @@ defmodule Tasker.SlackBot do
 
   # Private functions
 
-  defp update_cached_tasks(task_name, task_user) do
+  defp updated_tasks(task_name, :remove) do
+    Enum.reject(get_cached_tasks(), fn(cached_task) ->
+      cached_task.name == task_name
+    end)
+  end
+
+  defp updated_task_user(task_name, task_user, :remove) do
       Enum.map(get_cached_tasks(), fn(cached_task) ->
         cond do
           cached_task.name == task_name ->

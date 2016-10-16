@@ -16,8 +16,11 @@ defmodule Tasker.MessageHelper do
 
   def send_task_creation_success_message(task, message, slack) do
      send_message("<@#{message.user}> created a new task named #{task.name}", message.channel, slack)
+     send_task_request_user_mentions(task, message, slack)
+  end
 
-     task
+  def send_task_remove_success_message(task_name, message, slack) do
+     send_message("<@#{message.user}> removed <@#{task_name}>", message.channel, slack)
   end
 
   def send_task_request_user_mentions(task, message, slack) do
@@ -26,8 +29,6 @@ defmodule Tasker.MessageHelper do
       |> Enum.map(fn(user_name) -> "#{user_name}" end)
       |> Enum.join(" ")
     send_message("#{task.name} should be done by: #{user_mention_list}", message.channel, slack)
-
-    task
   end
 
   def send_group_users_add_success_message(group_name, new_users, message, slack) do

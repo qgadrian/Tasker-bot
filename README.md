@@ -6,6 +6,8 @@ This Slack bot manages tasks and users/groups to do a desired task. When a user 
 
 Once a task has no remaining users, it will be deleted.
 
+A task can be deleted even if there are remaining users.
+
 This bot uses the library [Elixir-Slack](https://github.com/BlakeWilliams/Elixir-Slack).
 
 The bot following will work with the following commands:
@@ -15,6 +17,12 @@ The bot following will work with the following commands:
   ``` @taskerBot Task new MY_TASK_NAME @user1 @user2 ```
 
   ``` @taskerBot Task new MY_TASK_NAME MY_GROUP_NAME ```
+
+  * Remove a task
+
+  ``` @taskerBot Task remove MY_TASK_NAME ```
+
+  ``` @taskerBot Task delete MY_TASK_NAME ```
 
   * Mark a task as done
 
@@ -35,6 +43,8 @@ The bot following will work with the following commands:
   * Remove users from a group
 
   ``` @taskerBot Group MY_GROUP_NAME remove @user1 @user2 ```
+
+  ``` @taskerBot Group MY_GROUP_NAME delete @user1 @user2 ```
 
   * List groups and members
 
