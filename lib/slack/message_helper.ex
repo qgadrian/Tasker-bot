@@ -20,7 +20,11 @@ defmodule Tasker.MessageHelper do
   end
 
   def send_task_remove_success_message(task_name, message, slack) do
-     send_message("<@#{message.user}> removed <@#{task_name}>", message.channel, slack)
+     send_message("<@#{message.user}> removed task #{task_name}", message.channel, slack)
+  end
+
+  def send_group_remove_success_message(group_name, message, slack) do
+     send_message("<@#{message.user}> removed group #{group_name}", message.channel, slack)
   end
 
   def send_task_request_user_mentions(task, message, slack) do

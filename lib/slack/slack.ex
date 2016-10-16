@@ -26,10 +26,11 @@ defmodule Tasker.SlackBot do
 
    # Regular expressions
    @regexp_create_task ~r/#{@command_task} #{@action_create} (?<task_name>\w+) ?((?<task_users><@.+>)|(?<task_group>\w+))*/
-   @regexp_remove_task ~r/#{@command_task} (#{@action_remove}|#{@action_delete}) (?<task_name>\w+)*/
+   @regexp_remove_task ~r/#{@command_task} (#{@action_remove}|#{@action_delete}) ?(?<task_name>\w+)*/
    @regexp_list_tasks ~r/#{@command_list_tasks}/
    @regexp_task_done ~r/#{@command_task} (\w+) #{@action_task_done}/
    @regexp_create_group ~r/#{@command_group} #{@action_create} (?<group_name>\w+) ?(?<group_users>.+)*/
+   @regexp_remove_group ~r/#{@command_group} (#{@action_remove}|#{@action_delete}) ?(?<group_name>\w+)*/
    @regexp_group_list ~r/#{@command_list_groups}/
    @regexp_group_add_users ~r/#{@command_group} (?<group_name>\w+) #{@action_group_add_users} ?(?<new_users><@.+>)*/
    @regexp_group_remove_users ~r/#{@command_group} (?<group_name>\w+) (#{@action_remove}|#{@action_delete}) ?(?<users_to_remove><@.+>)*/
@@ -123,6 +124,19 @@ defmodule Tasker.SlackBot do
             |> send_group_creation_success_message(message, slack)
         end
 
+        Regex.match?(@regexp_remove_group, command) ->
+          matches = Regex.run(@regexp_remove_group, command, capture: ["group_name"])
+          case matches do
+            [""] ->
+              send_message("<@#{message.user}> tell which group you want to delete, please.", message.channel, slack)
+            [group_name] ->
+              group_name
+              |> updated_groups(:remove)
+              |> add_groups_to_cache()
+
+              send_group_remove_success_message(group_name, message, slack)
+          end
+
         Regex.match?(@regexp_group_add_users, command) ->
           matches = Regex.run(@regexp_group_add_users, command, capture: :all_but_first)
           case matches do
@@ -201,6 +215,11 @@ defmodule Tasker.SlackBot do
       end)
   end
 
+  defp updated_groups(group_name, :remove) do
+    Enum.reject(get_cached_groups(), fn(cached_group) ->
+      cached_group.name == group_name
+    end)
+  end
 
   defp updated_group_users(new_users, group_name, :add) do
       Enum.map(get_cached_groups(), fn(cached_group) ->
