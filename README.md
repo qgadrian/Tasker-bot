@@ -56,6 +56,10 @@ Just set your slack bot token in the system env:
 
   ``` export SLACK_TOKEN=my_token ```
 
-And run the bot using
+Install dependencies:
+
+  ``` mix deps.get ```
+
+And run the bot using:
 
 ``` mix run --no-halt ```
