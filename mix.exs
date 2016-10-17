@@ -3,7 +3,7 @@ defmodule Tasker.Mixfile do
 
   def project do
     [app: :tasker,
-     version: "0.1.3",
+     version: "0.2.3",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -14,7 +14,7 @@ defmodule Tasker.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :slack, :con_cache],
+    [applications: [:logger, :slack, :con_cache, :quantum],
      mod: {Tasker, []}]
   end
 
@@ -22,7 +22,8 @@ defmodule Tasker.Mixfile do
     [
       {:slack, "~> 0.7.1"},
       {:con_cache, "~> 0.11.1"},
-      {:websocket_client, git: "https://github.com/jeremyong/websocket_client"}
+      {:websocket_client, git: "https://github.com/jeremyong/websocket_client"},
+      {:quantum, "~> 1.8.0"}
     ]
   end
 end
