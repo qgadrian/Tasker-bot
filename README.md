@@ -8,6 +8,8 @@ Once a task has no remaining users, it will be deleted.
 
 A task can be deleted even if there are remaining users.
 
+You can use the bot both by an im or mention in any channel the bot is member.
+
 This bot uses the library [Elixir-Slack](https://github.com/BlakeWilliams/Elixir-Slack).
 
 The bot following will work with the following commands:
@@ -27,12 +29,15 @@ The bot following will work with the following commands:
   * Mark a task as done
 
   (current user)
+
   ``` @taskerBot Task MY_TASK_NAME done ```
 
   (mark a entire group as done)
+
   ``` @taskerBot Task MY_TASK_NAME MY_TASK_GROUP done ```
 
   (mark other users as done)
+
   ``` @taskerBot Task MY_TASK_NAME @user1 @user2 done ```
 
   * List current taks and the remaining users

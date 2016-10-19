@@ -45,7 +45,8 @@ defmodule Tasker.SlackBot do
   def handle_message(message = %{type: "message"}, slack) do
     Logger.debug "Handle message #{inspect(message)}"
 
-    command = get_first_regexp_match(~r/<@#{slack.me.id}>:?\s(.+)/, message.text)
+    # command = get_first_regexp_match(~r/<@#{slack.me.id}>:?\s(.+)/, message.text)
+    command = get_message_command(message, slack)
 
     Logger.debug "Requested command #{command}"
 
@@ -273,6 +274,13 @@ defmodule Tasker.SlackBot do
     case Regex.run(regexp, text, capture: options) do
       nil -> ""
       matches -> List.first(matches)
+    end
+  end
+
+  defp get_message_command(message, slack) do
+    case Map.has_key?(slack.ims, message.channel) do
+      true -> get_first_regexp_match(~r{(.+)}, message.text)
+      false -> get_first_regexp_match(~r{<@#{slack.me.id}>:?\s(.+)}, message.text)
     end
   end
 
