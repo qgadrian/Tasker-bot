@@ -26,7 +26,14 @@ The bot following will work with the following commands:
 
   * Mark a task as done
 
+  (current user)
   ``` @taskerBot Task MY_TASK_NAME done ```
+
+  (mark a entire group as done)
+  ``` @taskerBot Task MY_TASK_NAME MY_TASK_GROUP done ```
+
+  (mark other users as done)
+  ``` @taskerBot Task MY_TASK_NAME @user1 @user2 done ```
 
   * List current taks and the remaining users
 
