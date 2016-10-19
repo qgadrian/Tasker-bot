@@ -15,11 +15,13 @@ defmodule Tasker.SlackBot do
    @command_group "Group"
    @command_list_groups "Groups"
    # actions
-   @action_create "new"
+   @action_create "create"
+   @action_new "new"
    @action_remove "remove"
    @action_delete "delete"
    @action_task_done "done"
    @action_group_add_users "add"
+   @action_rename_to "rename to"
 
    # Slack bot id
    @slack_bot_id "USLACKBOT"
@@ -28,11 +30,12 @@ defmodule Tasker.SlackBot do
    @slack_user_mentions_regex "(?<users><[@].*>)"
 
    # Regular expressions
-   @regexp_create_task ~r{#{@command_task} #{@action_create} (?<task_name>\w+) ?(#{@slack_user_mentions_regex}|(?<task_group>\w+))}
+   @regexp_create_task ~r{#{@command_task} (#{@action_create}|#{@action_new}) (?<task_name>\w+) ?(#{@slack_user_mentions_regex}|(?<task_group>\w+))}
    @regexp_remove_task ~r{#{@command_task} (#{@action_remove}|#{@action_delete}) ?(?<task_name>\w+)}
+   @regexp_rename_task ~r{#{@command_task} (?<task_name>\w+) #{@action_rename_to} (?<task_new_name>\w+)}
    @regexp_list_tasks ~r{#{@command_list_tasks}}
    @regexp_task_users_done ~r{#{@command_task} (?<task_name>\w+) ?(#{@slack_user_mentions_regex}|(?<task_group>\w*)) #{@action_task_done}}
-   @regexp_create_group ~r{#{@command_group} #{@action_create} (?<group_name>\w+) ?(?<group_users>#{@slack_user_mentions_regex})}
+   @regexp_create_group ~r{#{@command_group} (#{@action_create}|#{@action_new}) (?<group_name>\w+) ?(?<group_users>#{@slack_user_mentions_regex})}
    @regexp_remove_group ~r{#{@command_group} (#{@action_remove}|#{@action_delete}) ?(?<group_name>\w+)}
    @regexp_group_list ~r{#{@command_list_groups}}
    @regexp_group_add_users ~r{#{@command_group} (?<group_name>\w+) #{@action_group_add_users} ?#{@slack_user_mentions_regex}}
@@ -48,7 +51,7 @@ defmodule Tasker.SlackBot do
     # command = get_first_regexp_match(~r/<@#{slack.me.id}>:?\s(.+)/, message.text)
     command = get_message_command(message, slack)
 
-    Logger.debug "Requested command #{command}"
+    Logger.debug "Requested command: #{command}"
 
     cond do
       Regex.match?(@regexp_create_task, command) ->
@@ -92,6 +95,17 @@ defmodule Tasker.SlackBot do
             |> add_tasks_to_cache()
 
             send_task_remove_success_message(task_name, message, slack)
+        end
+
+      Regex.match?(@regexp_rename_task, command) ->
+        matches = Regex.run(@regexp_rename_task, command, capture: ["task_name", "task_new_name"])
+        case matches do
+          [task_name, task_new_name] ->
+            {task_name, task_new_name}
+            |> updated_tasks(:rename)
+            |> add_tasks_to_cache()
+
+            send_message("<@#{message.user}> renamed #{task_name} to #{task_new_name}", message.channel, slack)
         end
 
       Regex.match?(@regexp_list_tasks, command) ->
@@ -216,6 +230,15 @@ defmodule Tasker.SlackBot do
   defp updated_tasks(task_name, :remove) do
     Enum.reject(get_cached_tasks(), fn(cached_task) ->
       cached_task.name == task_name
+    end)
+  end
+
+  defp updated_tasks({task_name, task_new_name}, :rename) do
+    Enum.map(get_cached_tasks(), fn(cached_task) ->
+      cond do
+        cached_task.name == task_name -> %Task{name: task_new_name, users: cached_task.users}
+        true -> cached_task
+      end
     end)
   end
 

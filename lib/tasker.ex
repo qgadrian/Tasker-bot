@@ -2,6 +2,7 @@ defmodule Tasker do
   use Application
 
   # :observer.start
+  # c("lib/slack/slack.ex")
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false

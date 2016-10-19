@@ -26,6 +26,10 @@ The bot following will work with the following commands:
 
   ``` @taskerBot Task delete MY_TASK_NAME ```
 
+  * Rename a task
+
+  ``` @taskerBot Task MY_TASK_NAME rename to MY_NEW_TASK_NAME ```
+
   * Mark a task as done
 
   (current user)
