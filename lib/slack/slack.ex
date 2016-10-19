@@ -109,8 +109,7 @@ defmodule Tasker.SlackBot do
         end
 
       Regex.match?(@regexp_list_tasks, command) ->
-        active_tasks = get_print_tasks_msg()
-        send_message("Active tasks:\n#{active_tasks}", message.channel, slack)
+        send_task_list_message(message)
 
       Regex.match?(@regexp_task_users_done, command) ->
         matches = Regex.run(@regexp_task_users_done, command, capture: ["task_name", "users", "task_group"])
@@ -206,8 +205,7 @@ defmodule Tasker.SlackBot do
           end
 
         Regex.match?(@regexp_group_list, command) ->
-          groups = get_print_groups_msg()
-          send_message("Available groups:\n#{groups}", message.channel, slack)
+          send_group_list_message(message)
 
       true ->
         Logger.debug "No matching"

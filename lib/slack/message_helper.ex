@@ -3,6 +3,26 @@ defmodule Tasker.MessageHelper do
 
   import Tasker.CacheHelper
 
+  @slack_token Application.get_env(:tasker, Tasker.SlackBot)[:token]
+
+  def send_task_list_message(message) do
+    attachments =
+      get_cached_tasks_attachments()
+      |> JSX.encode!
+
+    Slack.Web.Chat.post_message(message.channel, "These are the current tasks waiting to the remaining users to complete them:",
+                            %{as_user: true, token: @slack_token, attachments: [attachments]})
+  end
+
+  def send_group_list_message(message) do
+    attachments =
+      get_cached_groups_attachments()
+      |> JSX.encode!
+
+    Slack.Web.Chat.post_message(message.channel, "Groups created until now:",
+                            %{as_user: true, token: @slack_token, attachments: [attachments]})
+  end
+
   def send_group_creation_success_message(group, message, slack) do
     user_mention_list =
       group.users
@@ -62,24 +82,40 @@ defmodule Tasker.MessageHelper do
      end
   end
 
-  def get_print_tasks_msg() do
+  def get_cached_tasks_attachments() do
     case get_cached_tasks() do
-      [] -> "There are no active tasks"
+      [] -> [%{
+          "color": "good",
+          "author_name": "There are no task to be done!"
+      }]
       cached_tasks ->
-        Enum.map(cached_tasks, fn(task) ->
-          users_list = Enum.join(task.users, ", ")
-          "*#{task.name}*\nRemaining users: #{users_list}\n\n"
+        Enum.map(cached_tasks, fn(cached_task) ->
+          users_list = Enum.join(cached_task.users, ", ")
+
+          %{
+              "color": "danger",
+              "author_name": "#{cached_task.name}",
+              "text": "#{users_list}"
+          }
         end)
     end
   end
 
-  def get_print_groups_msg() do
+  def get_cached_groups_attachments() do
     case get_cached_groups() do
-      [] -> "There are no groups created"
+      [] -> [%{
+          "color": "danger",
+          "author_name": "There are no groups created"
+      }]
       cached_groups ->
-        Enum.map(cached_groups, fn(group) ->
-          users_list = get_multiple_users_string_list(group.users)
-          "*#{group.name}*\nMembers: #{users_list}\n\n"
+        Enum.map(cached_groups, fn(cached_group) ->
+          users_list = get_multiple_users_string_list(cached_group.users)
+
+          %{
+              "color": "danger",
+              "author_name": "#{cached_group.name}",
+              "text": "#{users_list}"
+          }
         end)
     end
   end
