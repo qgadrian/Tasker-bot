@@ -1,3 +1,3 @@
 defmodule Tasker.Task do
-  defstruct name: "", users: []
+  defstruct name: "", creation_timestamp: "", users: []
 end

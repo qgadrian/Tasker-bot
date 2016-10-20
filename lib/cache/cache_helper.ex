@@ -31,8 +31,8 @@ defmodule Tasker.CacheHelper do
 
   def add_groups_to_cache(groups), do: ConCache.put(:tasker_cache, :groups, groups)
 
-  def add_task_to_cache(task_users, task_name) do
-    task = %Task{name: task_name, users: task_users}
+  def add_task_to_cache(task_users, task_name, creation_timestamp) do
+    task = %Task{name: task_name, users: task_users, creation_timestamp: creation_timestamp}
 
     case get_cached_tasks() do
      [] ->

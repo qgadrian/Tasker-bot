@@ -94,8 +94,10 @@ defmodule Tasker.MessageHelper do
 
           %{
               "color": "danger",
-              "author_name": "#{cached_task.name}",
-              "text": "#{users_list}"
+              "title": "#{cached_task.name}",
+              "text": "Remaining: #{users_list}",
+              "footer": "Created",
+              "ts": "#{cached_task.creation_timestamp}"
           }
         end)
     end
