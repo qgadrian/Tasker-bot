@@ -66,6 +66,10 @@ defmodule Tasker.MessageHelper do
     end
   end
 
+  def send_task_name_already_in_used(message, slack) do
+    send_message("<@#{message.user}> that task name it's already in use", message.channel, slack) 
+  end
+
   def get_multiple_users_string_list(users, acc \\ "") do
      case {users, acc} do
        {[single_user], ""} -> "<@#{single_user}>"

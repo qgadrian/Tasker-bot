@@ -10,6 +10,8 @@ A task can be deleted even if there are remaining users.
 
 You can use the bot both by an im or mention in any channel the bot is member.
 
+Notifications might be configured for all remaining tasks or just for a desired ones. The notification may be in a channel (bot has to be member of the notification channel) or by a im to every remaining user.
+
 This bot uses the library [Elixir-Slack](https://github.com/BlakeWilliams/Elixir-Slack).
 
 The bot following will work with the following commands:
@@ -65,6 +67,18 @@ The bot following will work with the following commands:
   * List groups and members
 
   ``` @taskerBot Groups ```
+
+  * Notify all remaining tasks on channel
+
+  ``` @taskerBot Task notify all on #channel_name * * * * * ```
+
+  * Notify remaining task on channel
+
+  ``` @taskerBot Task notify MY_TASK_NAME on #channel_name * * * * * ```
+
+  * Notify remaining task to all remaining users by im's
+
+  ``` @taskerBot Task notify MY_TASK_NAME on * * * * * ```
 
 ## Running
 

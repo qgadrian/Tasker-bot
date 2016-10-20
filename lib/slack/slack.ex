@@ -7,8 +7,6 @@ defmodule Tasker.SlackBot do
   import Tasker.CacheHelper
   import Tasker.MessageHelper
 
-  alias Tasker.{Task, Group}
-
    # commands
    @command_task "(?i)Task"
    @command_list_tasks "(?i)Tasks"
@@ -37,7 +35,7 @@ defmodule Tasker.SlackBot do
    @slack_channel_mention_regex "(<[#](?<channel>\\w+)\\|\\w+>)"
 
    # Regular expressions
-   @regexp_create_task ~r{#{@command_task} (#{@action_create}|#{@action_new}) #{@regex_task_name} ?(#{@slack_user_mentions_regex}|(?<task_group>\w+))}
+   @regexp_create_task ~r{#{@command_task} (#{@action_create}|#{@action_new}) #{@regex_task_name} (#{@slack_user_mentions_regex}|(?<task_group>\w+))}
    @regexp_remove_task ~r{#{@command_task} (#{@action_remove}|#{@action_delete}) ?#{@regex_task_name}}
    @regexp_rename_task ~r{#{@command_task} #{@regex_task_name} #{@action_rename_to} (?<task_new_name>\w+)}
    @regexp_list_tasks ~r{^#{@command_list_tasks}$}
@@ -69,24 +67,39 @@ defmodule Tasker.SlackBot do
           [_, "", ""] ->
             send_message("<@#{message.user}> you must tell me which group or users will have to do the task", message.channel, slack)
           [task_name, "", "all"] ->
-            slack.users
-            |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
-            |> Enum.map(fn({user_name,_}) -> "<@#{user_name}>" end)
-            |> add_task_to_cache(task_name, message.ts)
-            |> send_task_creation_success_message(message, slack)
+            case Enum.any?(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end) do
+              true ->
+                send_task_name_already_in_used(message, slack)
+              false ->
+                slack.users
+                |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
+                |> Enum.map(fn({user_name,_}) -> "<@#{user_name}>" end)
+                |> add_task_to_cache(task_name, message.ts)
+                |> send_task_creation_success_message(message, slack)
+            end
 
           [task_name, task_users, ""] ->
-            task_users
-            |> get_slack_users_ids()
-            |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
-            |> add_task_to_cache(task_name, message.ts)
-            |> send_task_creation_success_message(message, slack)
+            case Enum.any?(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end) do
+              true ->
+                send_task_name_already_in_used(message, slack)
+              false ->
+                task_users
+                |> get_slack_users_ids()
+                |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
+                |> add_task_to_cache(task_name, message.ts)
+                |> send_task_creation_success_message(message, slack)
+            end
 
           [task_name, "", task_group] ->
-            get_cached_group(task_group).users
-            |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
-            |> add_task_to_cache(task_name, message.ts)
-            |> send_task_creation_success_message(message, slack)
+            case Enum.any?(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end) do
+              true ->
+                send_task_name_already_in_used(message, slack)
+              false ->
+                get_cached_group(task_group).users
+                |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
+                |> add_task_to_cache(task_name, message.ts)
+                |> send_task_creation_success_message(message, slack)
+            end
         end
 
       Regex.match?(@regexp_remove_task, command) ->
@@ -223,8 +236,16 @@ defmodule Tasker.SlackBot do
 
           case matches do
             [task_name, "", cron_sentence] ->
-              create_notification_job(:all_tasks_notification, [:im, slack], cron_sentence)
+              create_notification_job(:"#{task_name}", [task_name, :im, slack], cron_sentence)
               send_message("Roger that <@#{message.user}>! I will notify about *#{task_name}* by im's", message.channel, slack)
+
+            ["all", "", cron_sentence] ->
+              create_notification_job(:all_tasks, [:all_tasks, :im, slack], cron_sentence)
+              send_message("Ok <@#{message.user}>! I will notify about all tasks by im's", message.channel, slack)
+
+            ["all", channel, cron_sentence] ->
+              create_notification_job(:all_tasks, [:all_tasks, channel, slack], cron_sentence)
+              send_message("Ok <@#{message.user}>! I will notify about all tasks on <##{channel}>", message.channel, slack)
 
             [task_name, channel, cron_sentence] ->
               create_notification_job(:"#{task_name}", [task_name, channel, slack], cron_sentence)
@@ -263,15 +284,15 @@ defmodule Tasker.SlackBot do
     end)
   end
 
-  def updated_task_users(task_name, task_user, :remove) when not is_list(task_user) do
-    updated_task_users(task_name, [task_user], :remove)
+  def updated_task_users(task_name, user_to_remove, :remove) when not is_list(user_to_remove) do
+    updated_task_users(task_name, [user_to_remove], :remove)
   end
 
-  def updated_task_users(task_name, task_users, :remove) when is_list(task_users) do
+  def updated_task_users(task_name, users_to_remove, :remove) when is_list(users_to_remove) do
       Enum.map(get_cached_tasks(), fn(cached_task) ->
         cond do
           cached_task.name == task_name ->
-            updated_users = Enum.reject(cached_task.users, fn(user) -> user in task_users end)
+            updated_users = Enum.reject(cached_task.users, fn(user) -> user in users_to_remove end)
 
             case updated_users do
               [] ->
@@ -294,7 +315,9 @@ defmodule Tasker.SlackBot do
     Enum.map(get_cached_groups(), fn(cached_group) ->
       cond do
         cached_group.name == group_name ->
-          Map.put(cached_group, :users, cached_group.users ++ new_users)
+          new_group_users = cached_group.users ++ new_users |> Enum.uniq()
+
+          Map.put(cached_group, :users, new_group_users)
         true ->
           cached_group
       end
