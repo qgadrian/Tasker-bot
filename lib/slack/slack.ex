@@ -12,6 +12,7 @@ defmodule Tasker.SlackBot do
    @command_list_tasks "(?i)Tasks"
    @command_group "(?i)Group"
    @command_list_groups "(?i)Groups"
+   @command_help "(?i)Help"
 
    # actions
    @action_create "create"
@@ -47,6 +48,10 @@ defmodule Tasker.SlackBot do
    @regexp_group_remove_users ~r{#{@command_group} #{@regex_group_name} (#{@action_remove}|#{@action_delete}) ?#{@slack_user_mentions_regex}}
    @regexp_notify_task ~r{#{@command_task} #{@action_notify} #{@regex_task_name} on ?#{@slack_channel_mention_regex}* (?<cron_sentence>.+)}
    @regexp_remove_notify_task ~r{#{@command_task} #{@action_notify} (global|#{@regex_task_name}) (#{@action_remove}|#{@action_delete})}
+
+   # Help regexps
+   @regexp_help_task ~r{#{@command_help} #{@command_task}}
+   @regexp_help_group ~r{#{@command_help} #{@command_group}}
 
   def handle_connect(slack) do
     IO.puts "Connected as #{slack.me.name}"
@@ -251,6 +256,9 @@ defmodule Tasker.SlackBot do
               create_notification_job(:"#{task_name}", [task_name, channel, slack], cron_sentence)
               send_message("Ok <@#{message.user}>! I will notify about *#{task_name}* on <##{channel}>", message.channel, slack)
           end
+
+        Regex.match?(@regexp_help_task, command) -> send_task_commands_help(message, slack)
+        Regex.match?(@regexp_help_group, command) -> send_group_commands_help(message, slack)
 
       true ->
         Logger.debug "Not maching found for: #{command}"

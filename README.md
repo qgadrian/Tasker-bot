@@ -18,33 +18,33 @@ The bot following will work with the following commands:
 
   * Create a new task
 
-  ``` @taskerBot Task new MY_TASK_NAME @user1 @user2 ```
+  ``` @taskerBot Task new TASK_NAME @user1 @user2 ```
 
-  ``` @taskerBot Task new MY_TASK_NAME MY_GROUP_NAME ```
+  ``` @taskerBot Task new TASK_NAME GROUP_NAME ```
 
   * Remove a task
 
-  ``` @taskerBot Task remove MY_TASK_NAME ```
+  ``` @taskerBot Task remove TASK_NAME ```
 
-  ``` @taskerBot Task delete MY_TASK_NAME ```
+  ``` @taskerBot Task delete TASK_NAME ```
 
   * Rename a task
 
-  ``` @taskerBot Task MY_TASK_NAME rename to MY_NEW_TASK_NAME ```
+  ``` @taskerBot Task TASK_NAME rename to NEW_TASK_NAME ```
 
   * Mark a task as done
 
   (current user)
 
-  ``` @taskerBot Task MY_TASK_NAME done ```
+  ``` @taskerBot Task TASK_NAME done ```
 
   (mark a entire group as done)
 
-  ``` @taskerBot Task MY_TASK_NAME MY_TASK_GROUP done ```
+  ``` @taskerBot Task TASK_NAME MY_TASK_GROUP done ```
 
   (mark other users as done)
 
-  ``` @taskerBot Task MY_TASK_NAME @user1 @user2 done ```
+  ``` @taskerBot Task TASK_NAME @user1 @user2 done ```
 
   * List current taks and the remaining users
 
@@ -52,17 +52,21 @@ The bot following will work with the following commands:
 
   * Create an user group
 
-  ``` @taskerBot Group new MY_GROUP_NAME @user1 @user2 ```
+  ``` @taskerBot Group new GROUP_NAME @user1 @user2 ```
+
+  * Remove an user group
+
+  ``` @taskerBot Group remove GROUP_NAME ```
 
   * Add a users to a group
 
-  ``` @taskerBot Group MY_GROUP_NAME add @user3 @user4 ```
+  ``` @taskerBot Group GROUP_NAME add @user3 @user4 ```
 
   * Remove users from a group
 
-  ``` @taskerBot Group MY_GROUP_NAME remove @user1 @user2 ```
+  ``` @taskerBot Group GROUP_NAME remove @user1 @user2 ```
 
-  ``` @taskerBot Group MY_GROUP_NAME delete @user1 @user2 ```
+  ``` @taskerBot Group GROUP_NAME delete @user1 @user2 ```
 
   * List groups and members
 
@@ -74,11 +78,11 @@ The bot following will work with the following commands:
 
   * Notify remaining task on channel
 
-  ``` @taskerBot Task notify MY_TASK_NAME on #channel_name * * * * * ```
+  ``` @taskerBot Task notify TASK_NAME on #channel_name * * * * * ```
 
   * Notify remaining task to all remaining users by im's
 
-  ``` @taskerBot Task notify MY_TASK_NAME on * * * * * ```
+  ``` @taskerBot Task notify TASK_NAME on * * * * * ```
 
 ## Running
 

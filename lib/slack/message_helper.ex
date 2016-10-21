@@ -3,6 +3,11 @@ defmodule Tasker.MessageHelper do
 
   import Tasker.CacheHelper
 
+  # Atachment colors
+  @info_color "#439FE0"
+  @purple_color "#9C27B0"
+  @indigo_color "#3F51B5"
+
   @slack_token Application.get_env(:tasker, Tasker.SlackBot)[:token]
 
   def send_task_list_message(message) do
@@ -67,7 +72,7 @@ defmodule Tasker.MessageHelper do
   end
 
   def send_task_name_already_in_used(message, slack) do
-    send_message("<@#{message.user}> that task name it's already in use", message.channel, slack) 
+    send_message("<@#{message.user}> that task name it's already in use", message.channel, slack)
   end
 
   def get_multiple_users_string_list(users, acc \\ "") do
@@ -114,11 +119,106 @@ defmodule Tasker.MessageHelper do
 
           %{
               "color": "danger",
-              "author_name": "#{cached_group.name}",
+              "title": "#{cached_group.name}",
               "text": "#{users_list}"
           }
         end)
     end
+  end
+
+  # Help messages
+
+  def send_task_commands_help(message, slack) do
+    attachments = [
+      %{
+          "color": "good",
+          "title": "Create new task",
+          "text": "Task new TASK_NAME @user1 @user2"
+      },
+      %{
+          "color": "danger",
+          "title": "Remove a task",
+          "text": "Task remove TASK_NAME"
+      },
+      %{
+          "color": "warning",
+          "title": "Rename a task",
+          "text": "Task TASK_NAME rename to NEW_TASK_NAME"
+      },
+      %{
+          "color": @indigo_color,
+          "title": "List all tasks",
+          "text": "Tasks"
+      },
+      %{
+          "color": @info_color,
+          "title": "Mark a task as done by me",
+          "text": "Task TASK_NAME done"
+      },
+      %{
+          "color": @info_color,
+          "title": "Mark a task as done by others users",
+          "text": "Task TASK_NAME @user1 @user2 done"
+      },
+      %{
+          "color": @info_color,
+          "title": "Mark a task as done by an entire group",
+          "text": "Task TASK_NAME GROUP_NAME done"
+      },
+      %{
+          "color": @purple_color,
+          "title": "Notify all remaining tasks on channel",
+          "text": "Task notify all on #CHANNEL_NAME * * * * *"
+      },
+      %{
+          "color": @purple_color,
+          "title": "Notify remaining task on channel",
+          "text": "Task notify TASK_NAME on #CHANNEL_NAME * * * * *"
+      },
+      %{
+          "color": @purple_color,
+          "title": "Notify remaining task to all remaining users by im's",
+          "text": "Task notify TASK_NAME on * * * * *"
+      },
+    ]
+    |> JSX.encode!
+
+    Slack.Web.Chat.post_message(message.channel, "These are the commands available for tasks:",
+                            %{as_user: true, token: @slack_token, attachments: [attachments]})
+  end
+
+  def send_group_commands_help(message, slack) do
+    attachments = [
+      %{
+          "color": "good",
+          "title": "Create new group",
+          "text": "Group new GROUP_NAME @user1 @user2"
+      },
+      %{
+          "color": "danger",
+          "title": "Remove a group",
+          "text": "Group remove GROUP_NAME"
+      },
+      %{
+          "color": @info_color,
+          "title": "Add users to a group",
+          "text": "Group GROUP_NAME add @user3 @user4"
+      },
+      %{
+          "color": "danger",
+          "title": "Remove users from a group",
+          "text": "Group GROUP_NAME remove @user1 @user2"
+      },
+      %{
+          "color": @indigo_color,
+          "title": "List all groups",
+          "text": "Groups"
+      }
+    ]
+    |> JSX.encode!
+
+    Slack.Web.Chat.post_message(message.channel, "These are the commands available for user groups:",
+                            %{as_user: true, token: @slack_token, attachments: [attachments]})
   end
 
 end
