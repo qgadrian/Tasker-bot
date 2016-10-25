@@ -8,7 +8,7 @@ defmodule Tasker.MessageHelper do
   @purple_color "#9C27B0"
   @indigo_color "#3F51B5"
 
-  @slack_token Application.get_env(:tasker, Tasker.SlackBot)[:token]
+  @slack_token Application.get_env(:tasker, Tasker)[:token]
 
   def send_task_list_message(message) do
     attachments =
@@ -53,7 +53,7 @@ defmodule Tasker.MessageHelper do
     send_message("#{task.name} should be done by: #{user_mention_list}", message.channel, slack)
   end
 
-  def send_group_users_add_success_message(group_name, new_users, message, slack) do
+  def send_group_users_add_success_message(new_users, group_name, message, slack) do
     case new_users do
       [single_user] -> send_message("<@#{single_user}> was added to #{group_name}", message.channel, slack)
       [_, _] ->
@@ -62,7 +62,7 @@ defmodule Tasker.MessageHelper do
     end
   end
 
-  def send_group_users_remove_success_message(group_name, users_to_remove, message, slack) do
+  def send_group_users_remove_success_message(users_to_remove, group_name, message, slack) do
     case users_to_remove do
       [single_user] -> send_message("<@#{single_user}> was removed from #{group_name}", message.channel, slack)
       [_, _] ->
@@ -73,6 +73,10 @@ defmodule Tasker.MessageHelper do
 
   def send_task_name_already_in_used(message, slack) do
     send_message("<@#{message.user}> that task name it's already in use", message.channel, slack)
+  end
+
+  def send_group_name_already_in_used(message, slack) do
+    send_message("<@#{message.user}>, another group already have that name, try another one!", message.channel, slack)
   end
 
   def get_multiple_users_string_list(users, acc \\ "") do
@@ -128,7 +132,7 @@ defmodule Tasker.MessageHelper do
 
   # Help messages
 
-  def send_task_commands_help(message, slack) do
+  def send_task_commands_help(message) do
     attachments = [
       %{
           "color": "good",
@@ -187,7 +191,7 @@ defmodule Tasker.MessageHelper do
                             %{as_user: true, token: @slack_token, attachments: [attachments]})
   end
 
-  def send_group_commands_help(message, slack) do
+  def send_group_commands_help(message) do
     attachments = [
       %{
           "color": "good",

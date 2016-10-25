@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/qgadrian/tasker.svg?branch=master)](https://travis-ci.org/qgadrian/tasker)
+
 # Tasker
 
 **Slack bot to manage tasks**

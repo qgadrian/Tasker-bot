@@ -1,6 +1,8 @@
 defmodule Tasker.NotificationHelper do
   use Slack
 
+  require Logger
+
   import Tasker.CacheHelper
   import Tasker.MessageHelper
 
