@@ -29,7 +29,7 @@ defmodule Tasker.SlackBot do
 
    # Slack mentions
    @slack_user_mentions_regex "(?<users>(<[@].+>))"
-   @slack_channel_mention_regex "(<[#](?<channel>\\w+)\\|\\w+>)"
+   @slack_channel_mention_regex "(<#(?<channel>\\w+)\\|\\w+>)"
 
    # Regular expressions
    @regexp_create_task ~r{#{@command_task} (#{@action_create}|#{@action_new}) #{@regex_task_name} (#{@slack_user_mentions_regex}|(?<task_group>\w+))}
@@ -42,7 +42,7 @@ defmodule Tasker.SlackBot do
    @regexp_group_list ~r{^#{@command_list_groups}$}
    @regexp_group_add_users ~r{#{@command_group} #{@regex_group_name} #{@action_group_add_users} ?#{@slack_user_mentions_regex}}
    @regexp_group_remove_users ~r{#{@command_group} #{@regex_group_name} (#{@action_remove}|#{@action_delete}) ?#{@slack_user_mentions_regex}}
-   @regexp_notify_task ~r{#{@command_task} #{@action_notify} #{@regex_task_name} on ?#{@slack_channel_mention_regex}* (?<cron_sentence>.+)}
+   @regexp_notify_task ~r{#{@command_task} #{@action_notify} #{@regex_task_name} ?(on #{@slack_channel_mention_regex})* on (?<cron_sentence>[\* |\w+ ]*)}
    @regexp_remove_notify_task ~r{#{@command_task} #{@action_notify} (global|#{@regex_task_name}) (#{@action_remove}|#{@action_delete})}
 
    # Help regexps
@@ -197,10 +197,6 @@ defmodule Tasker.SlackBot do
           matches = Regex.run(@regexp_notify_task, command, capture: ["task_name", "channel", "cron_sentence"])
 
           case matches do
-            [task_name, "", cron_sentence] ->
-              create_notification_job(:"#{task_name}", [task_name, :im, slack], cron_sentence)
-              send_message("Roger that <@#{message.user}>! I will notify about *#{task_name}* by im's", message.channel, slack)
-
             ["all", "", cron_sentence] ->
               create_notification_job(:all_tasks, [:all_tasks, :im, slack], cron_sentence)
               send_message("Ok <@#{message.user}>! I will notify about all tasks by im's", message.channel, slack)
@@ -208,6 +204,10 @@ defmodule Tasker.SlackBot do
             ["all", channel, cron_sentence] ->
               create_notification_job(:all_tasks, [:all_tasks, channel, slack], cron_sentence)
               send_message("Ok <@#{message.user}>! I will notify about all tasks on <##{channel}>", message.channel, slack)
+
+            [task_name, "", cron_sentence] ->
+              create_notification_job(:"#{task_name}", [task_name, :im, slack], cron_sentence)
+              send_message("Roger that <@#{message.user}>! I will notify about *#{task_name}* by im's", message.channel, slack)
 
             [task_name, channel, cron_sentence] ->
               create_notification_job(:"#{task_name}", [task_name, channel, slack], cron_sentence)

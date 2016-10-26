@@ -172,12 +172,12 @@ defmodule Tasker.MessageHelper do
       %{
           "color": @purple_color,
           "title": "Notify all remaining tasks on channel",
-          "text": "Task notify all on #CHANNEL_NAME * * * * *"
+          "text": "Task notify all on #CHANNEL_NAME on * * * * *"
       },
       %{
           "color": @purple_color,
           "title": "Notify remaining task on channel",
-          "text": "Task notify TASK_NAME on #CHANNEL_NAME * * * * *"
+          "text": "Task notify TASK_NAME on #CHANNEL_NAME on * * * * *"
       },
       %{
           "color": @purple_color,
