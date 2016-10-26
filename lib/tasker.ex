@@ -15,7 +15,8 @@ defmodule Tasker do
     children =
       case Application.get_env(:tasker, :enable_tasker_worker, false) do
         true ->
-          [worker(Tasker.SlackBot, [slack_token], [name: :tasker_bot, restart: :transient])] ++ default_workers
+          options = %{keepalive: 10000, name: :tasker_websocket}
+          [worker(Slack.Bot, [Tasker.SlackBot, [], slack_token, options], [restart: :transient])] ++ default_workers
         false -> default_workers
       end
 

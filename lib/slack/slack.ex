@@ -4,7 +4,6 @@ defmodule Tasker.SlackBot do
   import Tasker.MessageHelper
   import Tasker.TaskerHelper
 
-  require IEx
   require Logger
 
    # commands
@@ -50,11 +49,12 @@ defmodule Tasker.SlackBot do
    @regexp_help_task ~r{#{@command_help} #{@command_task}}
    @regexp_help_group ~r{#{@command_help} #{@command_group}}
 
-  def handle_connect(slack) do
+  def handle_connect(slack, state) do
     IO.puts "Connected as #{slack.me.name}"
+    {:ok, state}
   end
 
-  def handle_message(message = %{type: "message"}, slack) do
+  def handle_event(message = %{type: "message"}, slack, state) do
     Logger.debug "Handling message: #{inspect(message)}"
 
     command = get_message_command(message, slack)
@@ -221,18 +221,18 @@ defmodule Tasker.SlackBot do
         Logger.debug "Not maching found for: #{command}"
         # send_message("<@#{message.user}> Sorry, what?", message.channel, slack)
     end
-    {:ok}
+
+    {:ok, state}
   end
 
-  def handle_message(_message, _slack) do
-    # Logger.debug "Other message type: #{inspect(message)}"
-    {:ok}
+  def handle_event(_, _, state), do: {:ok, state}
+
+  def handle_info({:message, text, channel}, slack, state) do
+    Logger.debug "Info: #{inspect({:message, text, channel})}"
+    {:ok, state}
   end
 
-  def handle_info(_whatever, _slack) do
-    # Logger.debug "Info received #{inspect(_whatever)}"
-    {:ok}
-  end
+  def handle_info(_, _, state), do: {:ok, state}
 
 # Private functions
   defp create_notification_job(atom, args, cron_sentence) do
