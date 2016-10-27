@@ -69,7 +69,7 @@ defmodule Tasker.SlackBot do
           [_, "", ""] ->
             send_message("<@#{message.user}> you must tell me which group or users will have to do the task", message.channel, slack)
           [task_name, "", "all"] ->
-            case create_task_for_users(slack.users, task_name, message.ts, slack) do
+            case create_task_for_users(slack.users, task_name, message.ts) do
               {:ok, task} ->
                 send_task_creation_success_message(task, message, slack)
               :error ->
@@ -227,7 +227,7 @@ defmodule Tasker.SlackBot do
 
   def handle_event(_, _, state), do: {:ok, state}
 
-  def handle_info({:message, text, channel}, slack, state) do
+  def handle_info({:message, text, channel}, _, state) do
     Logger.debug "Info: #{inspect({:message, text, channel})}"
     {:ok, state}
   end

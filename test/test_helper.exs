@@ -44,6 +44,7 @@ defmodule Tasker.TestHelper do
           "user3" => %{id: "user3", is_bot: false},
           "user4" => %{id: "user4", is_bot: false},
           "bot1" => %{id: "bot1", is_bot: true},
+          "USLACKBOT" => %{id: "USLACKBOT", is_bot: false}
         },
       ims: %{id: "imu1"}
     }
@@ -55,7 +56,7 @@ defmodule Tasker.TestHelper do
         slack_rtm().users
       false ->
         slack_rtm().users
-        |> Enum.reject(fn({user_name, user_params}) -> user_params.is_bot end)
+        |> Enum.reject(fn({user_name, user_params}) -> user_name == "USLACKBOT" || user_params.is_bot end)
         |> Enum.into(%{})
     end
   end
