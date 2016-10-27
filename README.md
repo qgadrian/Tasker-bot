@@ -76,11 +76,11 @@ The bot following will work with the following commands:
 
   * Notify all remaining tasks on channel
 
-  ``` @taskerBot Task notify all on #channel_name * * * * * ```
+  ``` @taskerBot Task notify all on #channel_name on * * * * * ```
 
   * Notify remaining task on channel
 
-  ``` @taskerBot Task notify TASK_NAME on #channel_name * * * * * ```
+  ``` @taskerBot Task notify TASK_NAME on #channel_name on * * * * * ```
 
   * Notify remaining task to all remaining users by im's
 

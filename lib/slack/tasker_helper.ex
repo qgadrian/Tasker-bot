@@ -10,54 +10,45 @@ defmodule Tasker.TaskerHelper do
       case Enum.any?(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end) do
         true -> :error
         false ->
-          task =
-            slack_users
-            |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
-            |> Enum.map(fn({user_name,_}) -> "<@#{user_name}>" end)
-            |> add_task_to_cache(task_name, timestamp)
-
-          {:ok, task}
+          slack_users
+          |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
+          |> Enum.map(fn({user_name,_}) -> user_name end)
+          |> add_task_to_cache(task_name, timestamp)
       end
     end
 
-    def create_task_for_users(users, task_name, timestamp) do
-      case Enum.any?(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end) do
-        true -> :error
-        false ->
-          task =
-            users
-            |> get_slack_users_ids()
-            |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
-            |> add_task_to_cache(task_name, timestamp)
-
-          {:ok, task}
-      end
+    def create_task_for_users(users_string, task_name, timestamp, slack) do
+      users_string
+      |> get_slack_users(slack)
+      |> create_task_for_users(task_name, timestamp)
     end
 
     def create_task_for_group(group_name, task_name, timestamp) do
       case Enum.any?(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end) do
         true -> :error
         false ->
-          task =
-            get_cached_group(group_name).users
-            |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
-            |> add_task_to_cache(task_name, timestamp)
-
-          {:ok, task}
+          get_cached_group(group_name).users
+          |> add_task_to_cache(task_name, timestamp)
       end
     end
 
-    def do_task(task_name, users_string, :users) do
-      users = get_slack_users_ids(users_string)
-
+    def do_task(slack_users, task_name) when is_map(slack_users) do
       task_name
-      |> updated_task_users(users, :remove)
+      |> updated_task_users(slack_users, :remove)
       |> add_tasks_to_cache()
     end
 
-    def do_task(task_name, group_name, :group) do
+    def do_task({:users, users_string}, task_name, slack) do
+      users_string
+      |> get_slack_users(slack)
+      |> do_task(task_name)
+    end
+
+    def do_task({:group, group_name}, task_name, slack) do
+      slack_users = Map.take(slack.users, get_cached_group(group_name).users)
+
       task_name
-      |> updated_task_users(get_cached_group(group_name).users, :remove)
+      |> updated_task_users(slack_users, :remove)
       |> add_tasks_to_cache()
     end
 
@@ -83,47 +74,33 @@ defmodule Tasker.TaskerHelper do
           group =
             users_map
             |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
-            |> Enum.map(fn({user_name,_}) -> "<@#{user_name}>" end)
+            |> Enum.map(fn({user_name,_}) -> user_name end)
             |> add_group_to_cache(group_name)
 
           {:ok, group}
       end
     end
 
-    def create_users_group(users_string, group_name) do
-      case Enum.any?(get_cached_groups(), fn(cached_group) -> cached_group.name == group_name end) do
-        true -> :error
-        false ->
-          group =
-            users_string
-            |> get_slack_users_ids()
-            |> Enum.reject(fn(user_name) -> user_name == "<@#{@slack_bot_id}>" end)
-            |> add_group_to_cache(group_name)
-
-          {:ok, group}
-      end
+    def create_users_group(users_string, group_name, slack) do
+      users_string
+      |> get_slack_users(slack)
+      |> create_users_group(group_name)
     end
 
-    def add_users_to_group(user_names_to_add, group_name) do
-      user_ids_to_add = get_slack_users_ids(user_names_to_add)
-
-      user_ids_to_add
-      |> Enum.reject(fn(user_name_to_add) -> user_name_to_add == @slack_bot_id end)
+    def add_users_to_group(users_string, group_name, slack) do
+      users_string
+      |> get_slack_users(slack)
+      |> Enum.reject(fn({user_name, user_params}) -> user_name == @slack_bot_id || user_params.is_bot end)
+      |> Enum.into(%{})
       |> updated_group_users(group_name, :add)
       |> add_groups_to_cache()
-
-      user_ids_to_add
     end
 
-    def remove_users_from_group(users_to_remove_string, group_name) do
-      users_to_remove = get_slack_users_ids(users_to_remove_string)
-
-      users_to_remove
-      |> Enum.reject(fn(user_to_remove) -> user_to_remove == @slack_bot_id end)
+    def remove_users_from_group(users_string, group_name, slack) do
+      users_string
+      |> get_slack_users(slack)
       |> updated_group_users(group_name, :remove)
       |> add_groups_to_cache()
-
-      users_to_remove
     end
 
     def remove_group(group_name) do
@@ -149,15 +126,11 @@ defmodule Tasker.TaskerHelper do
     end)
   end
 
-  defp updated_task_users(task_name, user_to_remove, :remove) when not is_list(user_to_remove) do
-    updated_task_users(task_name, [user_to_remove], :remove)
-  end
-
-  defp updated_task_users(task_name, users_to_remove, :remove) when is_list(users_to_remove) do
+  defp updated_task_users(task_name, users_to_remove, :remove) do
       Enum.map(get_cached_tasks(), fn(cached_task) ->
         cond do
           cached_task.name == task_name ->
-            updated_users = Enum.reject(cached_task.users, fn(user) -> user in users_to_remove end)
+            updated_users = Enum.reject(cached_task.users, fn(user) -> user in Map.keys(users_to_remove) end)
 
             case updated_users do
               [] ->
@@ -176,12 +149,13 @@ defmodule Tasker.TaskerHelper do
     Enum.reject(get_cached_groups(), fn(cached_group) -> cached_group.name == group_name end)
   end
 
-  defp updated_group_users(new_users, group_name, :add) do
+  defp updated_group_users(slack_users, group_name, :add) do
+    user_ids = Map.keys(slack_users)
+
     Enum.map(get_cached_groups(), fn(cached_group) ->
       cond do
         cached_group.name == group_name ->
-          new_group_users = cached_group.users ++ new_users |> Enum.uniq()
-
+          new_group_users = cached_group.users ++ user_ids |> Enum.uniq()
           Map.put(cached_group, :users, new_group_users)
         true ->
           cached_group
@@ -189,21 +163,27 @@ defmodule Tasker.TaskerHelper do
     end)
   end
 
-  defp updated_group_users(users_to_remove, group_name, :remove) do
-      Enum.map(get_cached_groups(), fn(cached_group) ->
-        cond do
-          cached_group.name == group_name ->
-            Map.put(cached_group, :users, cached_group.users -- users_to_remove)
-          true ->
-            cached_group
-        end
-      end)
+  defp updated_group_users(slack_users, group_name, :remove) do
+    user_ids = Map.keys(slack_users)
+
+    Enum.map(get_cached_groups(), fn(cached_group) ->
+      cond do
+        cached_group.name == group_name ->
+          Map.put(cached_group, :users, cached_group.users -- user_ids)
+        true ->
+          cached_group
+      end
+    end)
   end
 
-  defp get_slack_users_ids(users) do
-    users
-    |> String.split(~r{( )+})
-    |> Enum.map(fn(user) -> List.first Regex.run(~r{<@(\w*)>}, user, capture: :all_but_first) end)
+  def get_slack_users(users_string, slack) do
+    slack_user_ids =
+      users_string
+      |> String.split(~r{( )+})
+      |> Enum.map(fn(user) -> List.first Regex.run(~r{<@(?<user_id>(\w*))>}, user, capture: ["user_id"]) end)
+      |> Enum.filter(fn(user_string) -> Map.has_key?(slack.users, user_string) end)
+
+    Map.take(slack.users, slack_user_ids)
   end
 
 end

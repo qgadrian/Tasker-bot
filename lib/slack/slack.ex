@@ -69,7 +69,7 @@ defmodule Tasker.SlackBot do
           [_, "", ""] ->
             send_message("<@#{message.user}> you must tell me which group or users will have to do the task", message.channel, slack)
           [task_name, "", "all"] ->
-            case create_task_for_users(slack.users, task_name, message.ts) do
+            case create_task_for_users(slack.users, task_name, message.ts, slack) do
               {:ok, task} ->
                 send_task_creation_success_message(task, message, slack)
               :error ->
@@ -77,7 +77,7 @@ defmodule Tasker.SlackBot do
             end
 
           [task_name, task_users, ""] ->
-            case create_task_for_users(task_users, task_name, message.ts) do
+            case create_task_for_users(task_users, task_name, message.ts, slack) do
               {:ok, task} ->
                 send_task_creation_success_message(task, message, slack)
               :error ->
@@ -122,15 +122,15 @@ defmodule Tasker.SlackBot do
 
         case matches do
           [task_name, "", ""] ->
-            do_task(task_name, "<@#{message.user}>", :users)
+            do_task({:users, "<@#{message.user}>"}, task_name, slack)
             send_message("<@#{message.user}> task #{task_name} done", message.channel, slack)
 
           [task_name, task_users, ""] ->
-            do_task(task_name, task_users, :users)
+            do_task({:users, task_users}, task_name, slack)
             send_message("<@#{message.user}> task #{task_name} done", message.channel, slack)
 
           [task_name, "", group_name] ->
-            do_task(task_name, group_name, :group)
+            do_task({:group, group_name}, task_name, slack)
             send_message("<@#{message.user}> task #{task_name} done", message.channel, slack)
         end
 
@@ -149,7 +149,7 @@ defmodule Tasker.SlackBot do
             end
 
           [group_name, group_users] ->
-            case create_users_group(group_users, group_name) do
+            case create_users_group(group_users, group_name, slack) do
               {:ok, group} ->
                 send_group_creation_success_message(group, message, slack)
               :error ->
@@ -175,7 +175,7 @@ defmodule Tasker.SlackBot do
             [_, ""] ->
               send_message("<@#{message.user}> you forgot tell me the new members of the group", message.channel, slack)
             [group_name, new_group_users] ->
-              add_users_to_group(new_group_users, group_name)
+              add_users_to_group(new_group_users, group_name, slack)
               |> send_group_users_add_success_message(group_name, message, slack)
           end
 
@@ -185,8 +185,8 @@ defmodule Tasker.SlackBot do
           case matches do
             [_, ""] ->
               send_message("<@#{message.user}> you forgot tell me the members the will removed from the group", message.channel, slack)
-            [group_name, group_users_to_remove] ->
-              remove_users_from_group(group_users_to_remove, group_name)
+            [group_name, users_string_to_remove] ->
+              remove_users_from_group(users_string_to_remove, group_name, slack)
               |> send_group_users_remove_success_message(group_name, message, slack)
           end
 
