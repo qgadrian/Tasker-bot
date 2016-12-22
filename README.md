@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/qgadrian/tasker.svg?branch=master)](https://travis-ci.org/qgadrian/tasker)
+[![Build Status](https://travis-ci.org/qgadrian/Tasker-bot.svg?branch=master)](https://travis-ci.org/qgadrian/Tasker-bot)
 
 # Tasker
 
