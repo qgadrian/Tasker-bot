@@ -20,7 +20,8 @@ defmodule Tasker.Mixfile do
 
   defp deps do
     [
-      {:slack, "~> 0.8.0"},
+      {:plug, "~> 1.4.3"},
+      {:slack, "~> 0.12.0"},
       {:con_cache, "~> 0.11.1"},
       {:quantum, "~> 1.8.0"}
     ]
