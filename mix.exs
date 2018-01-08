@@ -23,7 +23,8 @@ defmodule Tasker.Mixfile do
       {:plug, "~> 1.4.3"},
       {:slack, "~> 0.12.0"},
       {:con_cache, "~> 0.11.1"},
-      {:quantum, "~> 1.8.0"}
+      {:quantum, "~> 1.8.0"},
+      {:exjsx, "~> 4.0.0"}
     ]
   end
 end
