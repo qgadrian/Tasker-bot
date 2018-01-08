@@ -219,7 +219,7 @@ defmodule Tasker.SlackBot do
 
       true ->
         Logger.debug "Not maching found for: #{command}"
-        # send_message("<@#{message.user}> Sorry, what?", message.channel, slack)
+        send_message("<@#{message.user}> Sorry, what?", message.channel, slack)
     end
 
     {:ok, state}
