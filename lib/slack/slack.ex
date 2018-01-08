@@ -100,8 +100,12 @@ defmodule Tasker.SlackBot do
           [""] ->
             send_message("<@#{message.user}> I don't know which task to delete!", message.channel, slack)
           [task_name] ->
-            remove_task(task_name)
-            |> send_task_remove_success_message(message, slack)
+            if(find_task(task_name)) do
+              remove_task(task_name)
+              |> send_task_remove_success_message(message, slack)
+            else
+              send_message("<@#{message.user}> I didn't find that task to delete!", message.channel, slack)
+            end
         end
 
       Regex.match?(@regexp_rename_task, command) ->
