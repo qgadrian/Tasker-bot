@@ -66,6 +66,10 @@ defmodule Tasker.TaskerHelper do
       task_name
     end
 
+    def find_task(task_name) do
+      find_task(task_name, :find)
+    end
+
   # Groups
     def create_users_group(users_map, group_name) when is_map(users_map) do
       case Enum.any?(get_cached_groups(), fn(cached_group) -> cached_group.name == group_name end) do
@@ -115,6 +119,10 @@ defmodule Tasker.TaskerHelper do
 
   defp updated_tasks(task_name, :remove) do
     Enum.reject(get_cached_tasks(), fn(cached_task) -> cached_task.name == task_name end)
+  end
+
+  defp find_task(task_name, :find) do
+    Enum.find(get_cached_tasks, fn(x) -> x.name == task_name end)
   end
 
   defp updated_tasks({task_name, task_new_name}, :rename) do
